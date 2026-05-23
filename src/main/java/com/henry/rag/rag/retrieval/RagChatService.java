@@ -10,29 +10,31 @@ import org.springframework.stereotype.Service;
 public class RagChatService {
 
     private final ChatClient chatClient;
-    public RagChatService(ChatClient.Builder builder, VectorStore vectorStore) {
-        QuestionAnswerAdvisor advisor =
-                QuestionAnswerAdvisor.builder(vectorStore)
-                        .searchRequest(
-                                SearchRequest.builder()
-                                        .topK(5)
-                                        .similarityThreshold(0.7)
-                                        .build()
-                        )
-                        .build();
+    private final VectorStore vectorStore;
 
-        this.chatClient = builder
-                .defaultAdvisors(advisor)
-                .build();
+    public RagChatService(ChatClient chatClient, VectorStore vectorStore) {
+        this.chatClient = chatClient;
+        this.vectorStore = vectorStore;
     }
 
     public String ask(String question) {
+        var advisor = QuestionAnswerAdvisor
+                .builder(vectorStore)
+                .searchRequest(
+                        SearchRequest.builder()
+                                .topK(5)
+                                .similarityThreshold(0.7)
+                                .build()
+                )
+                .build();
+
         return chatClient.prompt()
+                .advisors(advisor)
                 .system("""
-                        You are a financial analysis assistant.
-                        Answer only from the provided context.
-                        If the answer is not present, say you don't know.
-                        """)
+                    You are a financial assistant.
+                    Answer ONLY from the provided context.
+                    If the answer is not found, say you don't know.
+                """)
                 .user(question)
                 .call()
                 .content();

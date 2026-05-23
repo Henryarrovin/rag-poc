@@ -8,4 +8,6 @@ fi
 
 echo "Environment variables loaded."
 
+cd ..
+
 ./gradlew bootRun
